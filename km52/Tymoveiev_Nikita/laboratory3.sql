@@ -6,28 +6,38 @@
 SET SERVEROUTPUT ON
 
 DECLARE
-    CustNum Number(38,0):=0;
-    customer_id      customers.cust_id%TYPE;
-    count_customer   INTEGER := 0;
-    customer_key     VARCHAR(10);
+     CustomerName customers.cust_name%TYPE;
+    CustomerId customers.cust_id%TYPE;
+    CustCount
+    int := 0;
+
 BEGIN
-    count_customer := 0;
-    customer_key := 'test';
-    CustNum := 1;
+    CustomerId := '1000000001';
     SELECT
-        COUNT(customers.cust_id)
+        COUNT(DISTINCT customers.cust_id)
     INTO
-        count_customer
+        CustCount
+    FROM
+        customers;
+
+    SELECT
+        cust_name
+    INTO
+        CustomerName
     FROM
         customers
     WHERE
-        customers.cust_id = '1000000001';
+        cust_id = CustomerId;
 
-    FOR i IN count_customer..9 LOOP
+    FOR i IN 1.. ( 10 - CustCount ) LOOP
         INSERT INTO customers (
-            cust_id
-        ) VALUES (customer_key || CustNum
-        || i );
+            cust_id,
+            cust_name
+        ) VALUES (
+            'test'
+            || i,
+            CustomerName
+        );
 
     END LOOP;
 
