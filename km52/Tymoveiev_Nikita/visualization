@@ -1,0 +1,151 @@
+import cx_Oracle
+import plotly.plotly as py
+import plotly.graph_objs as go
+import re
+import plotly.dashboard_objs as dashboard
+
+
+def fileId_from_url(url):
+    """Return fileId from a url."""
+    raw_fileId = re.findall("~[A-z.]+/[0-9]+", url)[0][1:]
+    return raw_fileId.replace('/', ':')
+
+
+connection = cx_Oracle.connect("nikita", "1111", "xe")
+
+cursor = connection.cursor()
+
+""" create plot 1   Скільки в гуртожитку проживає студентів."""
+
+cursor.execute("""
+   SELECT
+    dorminatory.dorm_number,
+    COUNT(student.stud_card) count_student
+FROM
+    student right
+    JOIN dorminatory ON student.dorm_number = dorminatory.dorm_number
+GROUP BY
+    dorminatory.dorm_number  """)
+
+dorm_number = []
+count_students = []
+
+for row in cursor:
+    print("In Dorm №: ", row[0], "students : ", row[1])
+    dorm_number += [row[0]]
+    count_students += [row[1]]
+
+data = [go.Bar(
+    x=dorm_number,
+    y=count_students
+)]
+
+layout = go.Layout(
+    title='Dorminatory in students there',
+    xaxis=dict(
+        title='Dorm number',
+        titlefont=dict(
+            family='Courier New, monospace',
+            size=18,
+            color='#7f7f7f'
+        )
+    ),
+    yaxis=dict(
+        title='Rooms in dorm',
+        rangemode='nonnegative',
+        autorange=True,
+        titlefont=dict(
+            family='Courier New, monospace',
+            size=18,
+            color='#7f7f7f'
+        )
+    )
+)
+fig = go.Figure(data=data, layout=layout)
+
+students_in_dorm_url = py.plot(fig, filename='student in dorm', auto_open=True)
+
+""" create plot 2   Скільки в гуртожитку кімнат"""
+
+cursor.execute("""
+SELECT
+    dorm_number,
+    COUNT(room_number) count_room
+FROM
+    dorminatory_rooms
+GROUP BY
+    dorm_number
+""");
+
+dorm_number = []
+count_room = []
+
+for row in cursor:
+    print("Dorm number №" , row[0], " count of rooms ", row[1])
+    dorm_number += [row[0]]
+    count_room += [row[1]]
+
+pie = go.Pie(labels=dorm_number, values=count_room)
+count_rooms_in_dorm = py.plot([pie], filename='dorm-room-count', auto_open=True)
+
+""" create plot 3   Скільки стдуентів вступило до університету"""
+
+cursor.execute("""
+SELECT
+    stud_year_of_receipt,
+    COUNT(stud_card) count_student
+FROM
+    student
+GROUP BY
+    stud_year_of_receipt
+""")
+years = []
+count_student = []
+
+for row in cursor:
+    print("Date ", row[0], " sum: ", row[1])
+    years += [row[0]]
+    count_student += [row[1]]
+
+year_count_student = go.Scatter(
+    x=years,
+    y=count_student,
+    mode='lines+markers'
+)
+data = [year_count_student]
+year_count_student_url = py.plot(data, filename='student count in some year',auto_open= True)
+
+"""--------CREATE DASHBOARD------------------ """
+
+my_dboard = dashboard.Dashboard()
+
+students_in_dorm_id = fileId_from_url(students_in_dorm_url)
+count_rooms_in_dorm_id = fileId_from_url(count_rooms_in_dorm)
+year_count_student_id = fileId_from_url(year_count_student_url)
+
+box_1 = {
+    'type': 'box',
+    'boxType': 'plot',
+    'fileId': students_in_dorm_id,
+    'title': 'student in dorm'
+}
+
+box_2 = {
+    'type': 'box',
+    'boxType': 'plot',
+    'fileId': count_rooms_in_dorm_id,
+    'title': 'dorm-room-count'
+}
+
+box_3 = {
+    'type': 'box',
+    'boxType': 'plot',
+    'fileId': year_count_student_id,
+    'title': 'student count in some year'
+}
+
+my_dboard.insert(box_1)
+my_dboard.insert(box_2, 'below', 1)
+my_dboard.insert(box_3, 'left', 2)
+
+py.dashboard_ops.upload(my_dboard, 'My First Dashboard with Python')
