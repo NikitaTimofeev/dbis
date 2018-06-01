@@ -1,0 +1,17 @@
+import csv
+ 
+import cx_Oracle
+ 
+connection = cx_Oracle.connect("nikita", "1111", "xe")
+ 
+cursor = connection.cursor()
+ 
+with open("import.csv", newline='') as file:
+	reader = csv.reader(file)
+	for row in reader:
+		insert_query = "insert into student(stud_card, stud_name, stud_surname, srud_year_of_receipt, stud_email) values(:stud_card, :stud_name, :stud_surname, :stud_year_of_receipt, :stud_email )"
+
+		cursor.execute(insert_query, stud_card = row[0], stud_name = row[1], stud_surname = row[2], stud_year_of_receipt = row[3], stud_email = row[4])
+cursor.close()
+connection.commit() /*save changes in db*/
+
