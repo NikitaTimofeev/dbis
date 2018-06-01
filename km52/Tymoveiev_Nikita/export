@@ -1,0 +1,32 @@
+import csv
+ 
+import cx_Oracle
+ 
+connection = cx_Oracle.connect("nikita", "1111", "xe")
+ 
+cursor = connection.cursor()
+ 
+cursor.execute("""
+SELECT
+	TRIM(stud_card) as card,
+	TRIM(stud_name) as name,
+	TRIM(stud_surname) as surname,
+	TRIM(stud_year_of_receipt) as year_of_receipt,
+	TRIM(stud_email) as email
+FROM student
+
+""")
+ 
+ 
+ 
+with open("result.csv", "w", newline="") as file:
+	writer = csv.writer(file)
+	for stud_card, stud_name, stud_surname, stud_year_of_receipt, stud_email in cursor:
+ 
+
+ 
+        	writer.writerow([stud_card, stud_name, stud_surname, stud_year_of_receipt, stud_email])
+
+ 
+        
+cursor.close()
